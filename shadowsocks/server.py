@@ -1,19 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
-#
-# Copyright 2015 clowwindy
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may
-# not use this file except in compliance with the License. You may obtain
-# a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations
-# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
@@ -25,6 +11,7 @@ import signal
 
 if __name__ == '__main__':
     import inspect
+
     file_path = os.path.dirname(
         os.path.realpath(
             inspect.getfile(
@@ -106,7 +93,7 @@ def main():
         if 'server_ipv6' in a_config:
             try:
                 if len(a_config['server_ipv6']) > 2 and a_config['server_ipv6'][
-                        0] == "[" and a_config['server_ipv6'][-1] == "]":
+                    0] == "[" and a_config['server_ipv6'][-1] == "]":
                     a_config['server_ipv6'] = a_config['server_ipv6'][1:-1]
                 a_config['server_port'] = int(port)
                 a_config['password'] = password
@@ -171,11 +158,13 @@ def main():
             logging.warn('received SIGQUIT, doing graceful shutting down..')
             list(map(lambda s: s.close(next_tick=True),
                      tcp_servers + udp_servers))
+
         signal.signal(getattr(signal, 'SIGQUIT', signal.SIGTERM),
                       child_handler)
 
         def int_handler(signum, _):
             sys.exit(1)
+
         signal.signal(signal.SIGINT, int_handler)
 
         try:
@@ -211,6 +200,7 @@ def main():
                         except OSError:  # child may already exited
                             pass
                     sys.exit()
+
                 signal.signal(signal.SIGTERM, handler)
                 signal.signal(signal.SIGQUIT, handler)
                 signal.signal(signal.SIGINT, handler)

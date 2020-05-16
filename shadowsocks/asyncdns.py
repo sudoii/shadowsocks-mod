@@ -1,19 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Copyright 2014-2015 clowwindy
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may
-# not use this file except in compliance with the License. You may obtain
-# a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations
-# under the License.
 
 from __future__ import absolute_import, division, print_function, \
     with_statement
@@ -27,11 +13,11 @@ import logging
 if __name__ == '__main__':
     import sys
     import inspect
+
     file_path = os.path.dirname(os.path.realpath(inspect.getfile(inspect.currentframe())))
     sys.path.insert(0, os.path.join(file_path, '../'))
 
 from shadowsocks import common, lru_cache, eventloop, shell
-
 
 CACHE_SWEEP_INTERVAL = 30
 
@@ -77,6 +63,47 @@ QTYPE_CNAME = 5
 QTYPE_NS = 2
 QCLASS_IN = 1
 
+from configloader import get_config
+
+
+def InfoLog(text):
+    print('\033[1;32m [Info] \033[0m' + '{text}'.format(text=text))
+
+
+def ErrorLog(text):
+    print('\033[1;31m [Error] \033[0m' + '{text}'.format(text=text))
+
+
+def isIp(ip):
+    p = re.compile('^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$')
+    if p.match(ip):
+        return True
+    else:
+        return False
+
+
+def get_dns(host):
+    if isIp(host):
+        ip = host
+    elif host == 'null':
+        ip = 'null'
+    else:
+        ip = socket.gethostbyname(host)
+    return ip
+
+
+def get_dns_ip():
+    NS_NETFLIX = get_dns(get_config().NS_NETFLIX)
+    NS_HBO = get_dns(get_config().NS_HBO)
+    NS_HULU = get_dns(get_config().NS_HULU)
+    NS_BBC = get_dns(get_config().NS_BBC)
+    # InfoLog('' + '\t' + 'NS_NETFLIX' + '[' + NS_NETFLIX + ']')
+    # InfoLog('' + '\t' + 'NS_HBO' + '[' + NS_HBO + ']')
+    # InfoLog('' + '\t' + 'NS_HULU' + '[' + NS_HULU + ']')
+    # InfoLog('' + '\t' + 'NS_BBC' + '[' + NS_BBC + ']')
+    return NS_NETFLIX, NS_HBO, NS_HULU, NS_BBC
+
+
 def detect_ipv6_supprot():
     if 'has_ipv6' in dir(socket):
         try:
@@ -89,7 +116,9 @@ def detect_ipv6_supprot():
     print('IPv6 not support')
     return False
 
+
 IPV6_CONNECTION_SUPPORT = detect_ipv6_supprot()
+
 
 def build_address(address):
     address = address.strip(b'.')
@@ -175,7 +204,7 @@ def parse_record(data, offset, question=False):
         )
         ip = parse_ip(record_type, data, record_rdlength, offset + nlen + 10)
         return nlen + 10 + record_rdlength, \
-            (name, ip, record_type, record_class, record_ttl)
+               (name, ip, record_type, record_class, record_ttl)
     else:
         record_type, record_class = struct.unpack(
             '!HH', data[offset + nlen:offset + nlen + 4]
@@ -209,7 +238,7 @@ def parse_response(data):
             if not header:
                 return None
             res_id, res_qr, res_tc, res_ra, res_rcode, res_qdcount, \
-                res_ancount, res_nscount, res_arcount = header
+            res_ancount, res_nscount, res_arcount = header
 
             qds = []
             ans = []
@@ -423,7 +452,9 @@ class DNSResolver(object):
             self._loop.add(self._sock, eventloop.POLL_IN, self)
         else:
             data, addr = sock.recvfrom(1024)
-            if addr not in self._servers:
+            NS_NETFLIX, NS_HBO, NS_HULU, NS_BBC = get_dns_ip()
+            unlock_dns = [NS_NETFLIX, NS_HBO, NS_HULU, NS_BBC]
+            if addr not in self._servers and addr[0] not in unlock_dns:
                 logging.warn('received a packet other than our dns')
                 return
             self._handle_data(data)
@@ -448,7 +479,24 @@ class DNSResolver(object):
         for server in self._servers:
             logging.debug('resolving %s with type %d using server %s',
                           hostname, qtype, server)
-            self._sock.sendto(req, server)
+            use_default_dns = True
+            NS_NETFLIX, NS_HBO, NS_HULU, NS_BBC = get_dns_ip()
+            if NS_NETFLIX != 'null' and ("netflix" in str(hostname) or "nflx" in str(hostname)):
+                self._sock.sendto(req, (NS_NETFLIX, 53))
+                use_default_dns = False
+            if NS_HBO != 'null' and (
+                    "hbo" in str(hostname) or "execute-api.ap-southeast-1.amazonaws.com" == str(hostname)):
+                self._sock.sendto(req, (NS_HBO, 53))
+                use_default_dns = False
+            if NS_HULU != 'null' and ("hulu" in str(hostname) or "happyon.jp" == str(hostname)):
+                self._sock.sendto(req, (NS_HULU, 53))
+                use_default_dns = False
+            if NS_BBC != 'null' and (
+                    "bbc" in str(hostname) or "co.uk" in str(hostname) or "uk-live" in str(hostname)):
+                self._sock.sendto(req, (NS_BBC, 53))
+                use_default_dns = False
+            if use_default_dns:
+                self._sock.sendto(req, server)
 
     def resolve(self, hostname, callback):
         if type(hostname) != bytes:
@@ -471,10 +519,10 @@ class DNSResolver(object):
                 return
             if False:
                 addrs = socket.getaddrinfo(hostname, 0, 0,
-                                       socket.SOCK_DGRAM, socket.SOL_UDP)
+                                           socket.SOCK_DGRAM, socket.SOL_UDP)
                 if addrs:
                     af, socktype, proto, canonname, sa = addrs[0]
-                    logging.debug('DNS resolve %s %s' % (hostname, sa[0]) )
+                    logging.debug('DNS resolve %s %s' % (hostname, sa[0]))
                     self._cache[hostname] = sa[0]
                     callback((hostname, sa[0]), None)
                     return
@@ -524,10 +572,11 @@ def test():
             if counter == 9:
                 dns_resolver.close()
                 loop.stop()
+
         a_callback = callback
         return a_callback
 
-    assert(make_callback() != make_callback())
+    assert (make_callback() != make_callback())
 
     dns_resolver.resolve(b'google.com', make_callback())
     dns_resolver.resolve('google.com', make_callback())
