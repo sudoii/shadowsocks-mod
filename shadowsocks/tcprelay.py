@@ -152,7 +152,7 @@ class TCPRelayHandler(object):
         server_info.port = server._listen_port
         # server_info.users = server.server_users
         # server_info.update_user_func = self._update_user
-        server_info.client = self._client_address[0]
+        server_info.client = self._real_addr
         server_info.client_port = self._client_address[1]
         server_info.protocol_param = ''
         server_info.obfs_param = config['obfs_param']
@@ -176,7 +176,7 @@ class TCPRelayHandler(object):
             server_info.users = {}
         server_info.update_user_func = self._update_user
         server_info.is_multi_user = config["is_multi_user"]
-        server_info.client = self._client_address[0]
+        server_info.client = self._real_addr
         server_info.client_port = self._client_address[1]
         server_info.protocol_param = config['protocol_param']
         server_info.obfs_param = ''
@@ -211,7 +211,7 @@ class TCPRelayHandler(object):
         self.last_activity = 0
         self._update_activity()
         self._server.add_connection(1)
-        self._server.stat_add(self._client_address[0], 1)
+        self._server.stat_add(self._real_addr, 1)
 
         self._add_ref = 1
 
@@ -386,7 +386,7 @@ class TCPRelayHandler(object):
                     shell.print_exception(e)
                     logging.error(
                         "exception from %s:%d" %
-                        (self._client_address[0], self._client_address[1]))
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
                     return False
             return True
@@ -415,14 +415,14 @@ class TCPRelayHandler(object):
                     shell.print_exception(e)
                     logging.error(
                         "exception from %s:%d" %
-                        (self._client_address[0], self._client_address[1]))
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
                     return False
             except Exception as e:
                 shell.print_exception(e)
                 logging.error(
                     "exception from %s:%d" %
-                    (self._client_address[0],
+                    (self._real_addr,
                      self._client_address[1]))
                 self.destroy()
                 return False
@@ -436,7 +436,7 @@ class TCPRelayHandler(object):
             else:
                 logging.error(
                     'write_all_to_sock:unknown socket from %s:%d' %
-                    (self._client_address[0], self._client_address[1]))
+                    (self._real_addr, self._client_address[1]))
         else:
             if sock == self._local_sock:
                 self._update_stream(STREAM_DOWN, WAIT_STATUS_READING)
@@ -445,7 +445,7 @@ class TCPRelayHandler(object):
             else:
                 logging.error(
                     'write_all_to_sock:unknown socket from %s:%d' %
-                    (self._client_address[0], self._client_address[1]))
+                    (self._real_addr, self._client_address[1]))
         return True
 
     def _handle_server_dns_resolved(self, error, remote_addr, server_addr, data):
@@ -475,7 +475,7 @@ class TCPRelayHandler(object):
             return True
         except Exception as e:
             shell.print_exception(e)
-            logging.error("exception from %s:%d" % (self._client_address[0], self._client_address[1]))
+            logging.error("exception from %s:%d" % (self._real_addr, self._client_address[1]))
 
     def _get_redirect_host(self, client_address, ogn_data):
         host_list = self._redir_list or ["*#0.0.0.0:0"]
@@ -713,7 +713,7 @@ class TCPRelayHandler(object):
                         traceback.print_exc()
                     logging.error(
                         "exception from %s:%d" %
-                        (self._client_address[0], self._client_address[1]))
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
 
     def _get_head_size(self, buf, def_value):
@@ -819,7 +819,7 @@ class TCPRelayHandler(object):
                     ((connecttype == 0) and 'TCP' or 'UDP',
                      common.to_str(remote_addr),
                      remote_port,
-                     self._client_address[0],
+                     self._real_addr,
                      self._client_address[1],
                      self._server._listen_port))
             if connecttype != 0:
@@ -832,7 +832,7 @@ class TCPRelayHandler(object):
                     ((connecttype == 0) and 'TCP' or 'UDP',
                      common.to_str(remote_addr),
                      remote_port,
-                     self._client_address[0],
+                     self._real_addr,
                      self._client_address[1],
                      self._server._listen_port,
                      binascii.hexlify(data)))
@@ -859,7 +859,7 @@ class TCPRelayHandler(object):
                                  (connecttype == 0) and 'TCP' or 'UDP',
                                  common.to_str(remote_addr),
                                  remote_port,
-                                 self._client_address[0],
+                                 self._real_addr,
                                  self._client_address[1],
                                  self._server._listen_port))
                 if not self._server.is_pushing_detect_hex_list:
@@ -884,13 +884,13 @@ class TCPRelayHandler(object):
                                  self._server.detect_hex_list[id]['regex'],
                                  common.to_str(remote_addr),
                                  remote_port,
-                                 self._client_address[0],
+                                 self._real_addr,
                                  self._client_address[1],
                                  self._server._listen_port))
 
-                ip = self._real_addr or common.getRealIp(self._client_address[0])
+                ip = self._real_addr or common.getRealIp(self._real_addr)
                 if self._config['is_multi_user'] == 0 and ip not in self._server.connected_iplist and \
-                        self._client_address[0] != 0 and self._server.is_cleaning_connected_iplist == False:
+                        self._real_addr != 0 and self._server.is_cleaning_connected_iplist == False:
                     self._server.connected_iplist.append(ip)
 
                 if self._config['is_multi_user'] != 0 and self._current_user_id != 0:
@@ -899,9 +899,9 @@ class TCPRelayHandler(object):
                         self._server.mu_connected_iplist[self._current_user_id].append(ip)
 
                 # TODO: ???
-                if self._client_address[0] in self._server.wrong_iplist and self._client_address[
+                if self._real_addr in self._server.wrong_iplist and self._client_address[
                     0] != 0 and self._server.is_cleaning_wrong_iplist == False:
-                    del self._server.wrong_iplist[self._client_address[0]]
+                    del self._server.wrong_iplist[self._real_addr]
 
             self._remote_address = (common.to_str(remote_addr), remote_port)
             self._remote_udp = (connecttype != 0)
@@ -1015,7 +1015,7 @@ class TCPRelayHandler(object):
 
                 if self._server.multi_user_table[
                     self._current_user_id]['_disconnect_ipset']:
-                    ip = self._real_addr or self._client_address[0]
+                    ip = self._real_addr or self._real_addr
                     if ip in self._server.multi_user_table[
                         self._current_user_id]['_disconnect_ipset']:
                         if self._remote_address:
@@ -1034,7 +1034,7 @@ class TCPRelayHandler(object):
                         if self._remote_address:
                             raise Exception(
                                 'IP %s is in forbidden list, when connect to %s:%d via port %d' %
-                                (self._client_address[0],
+                                (self._real_addr,
                                  self._remote_address[0],
                                  self._remote_address[1],
                                  self._server._listen_port))
@@ -1053,7 +1053,7 @@ class TCPRelayHandler(object):
                             'Port %d is in forbidden list, reject' %
                             sa[1])
                 if self._server._disconnect_ipset:
-                    ip = self._real_addr or self._client_address[0]
+                    ip = self._real_addr or self._real_addr
                     if ip in self._server._disconnect_ipset:
                         if self._remote_address:
                             raise Exception(
@@ -1159,7 +1159,7 @@ class TCPRelayHandler(object):
                         traceback.print_exc()
                     logging.error(
                         "exception from %s:%d" %
-                        (self._client_address[0], self._client_address[1]))
+                        (self._real_addr, self._client_address[1]))
         self.destroy()
 
     def is_match_relay_rule_mu(self):
@@ -1254,7 +1254,7 @@ class TCPRelayHandler(object):
                             shell.print_exception(e)
                             logging.error(
                                 "exception from %s:%d" %
-                                (self._client_address[0], self._client_address[1]))
+                                (self._real_addr, self._client_address[1]))
                             self.destroy()
                             return
                         need_sendback = False
@@ -1285,7 +1285,7 @@ class TCPRelayHandler(object):
                             except Exception as e:
                                 logging.error(
                                     "decrypt data failed, exception from %s:%d" %
-                                    (self._client_address[0], self._client_address[1]))
+                                    (self._real_addr, self._client_address[1]))
                                 data = [0]
                         else:
                             data = obfs_decode[0]
@@ -1301,13 +1301,13 @@ class TCPRelayHandler(object):
                                 else:
                                     logging.error(
                                         'The host:%s md5 is mismatch,so The connection has been rejected, when connect from %s:%d via port %d' %
-                                        (host_name, self._client_address[0], self._client_address[1],
+                                        (host_name, self._real_addr, self._client_address[1],
                                          self._server._listen_port))
                                     is_Failed = True
                             except Exception as e:
                                 logging.error(
                                     'The mu hostname is error,so The connection has been rejected, when connect from %s:%d via port %d' %
-                                    (self._client_address[0], self._client_address[1], self._server._listen_port))
+                                    (self._real_addr, self._client_address[1], self._server._listen_port))
                                 is_Failed = True
 
                         try:
@@ -1318,7 +1318,7 @@ class TCPRelayHandler(object):
                                 "is_multi_user"] == 2 and self._current_user_id == 0 and data:
                                 logging.error(
                                     'The port is multi user in single port only , but the key remote provided is error or empty, so The connection has been rejected, when connect from %s:%d via port %d' %
-                                    (self._client_address[0], self._client_address[1], self._server._listen_port))
+                                    (self._real_addr, self._client_address[1], self._server._listen_port))
                                 is_Failed = True
 
                             if self._server._config[
@@ -1338,7 +1338,7 @@ class TCPRelayHandler(object):
                                         traceback.print_exc()
                                     logging.error(
                                         "exception from %s:%d" %
-                                        (self._client_address[0], self._client_address[1]))
+                                        (self._real_addr, self._client_address[1]))
                                     self.destroy()
                                     return
 
@@ -1356,14 +1356,14 @@ class TCPRelayHandler(object):
                                         traceback.print_exc()
                                     logging.error(
                                         "exception from %s:%d" %
-                                        (self._client_address[0], self._client_address[1]))
+                                        (self._real_addr, self._client_address[1]))
                                     self.destroy()
                                     return
                         except Exception as e:
                             shell.print_exception(e)
                             logging.error(
                                 "exception from %s:%d" %
-                                (self._client_address[0], self._client_address[1]))
+                                (self._real_addr, self._client_address[1]))
                             self.destroy()
 
                         if is_Failed:
@@ -1426,7 +1426,7 @@ class TCPRelayHandler(object):
                 size = len(data) + 2
 
                 data = struct.pack('>H', size) + data
-                # logging.info('UDP over TCP recvfrom %s:%d %d bytes to %s:%d' % (addr[0], addr[1], len(data), self._client_address[0], self._client_address[1]))
+                # logging.info('UDP over TCP recvfrom %s:%d %d bytes to %s:%d' % (addr[0], addr[1], len(data), self._real_addr, self._client_address[1]))
             else:
                 if self._is_local:
                     recv_buffer_size = BUF_SIZE
@@ -1459,7 +1459,7 @@ class TCPRelayHandler(object):
                     shell.print_exception(e)
                     logging.error(
                         "exception from %s:%d" %
-                        (self._client_address[0], self._client_address[1]))
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
                     return
                 if obfs_decode[1]:
@@ -1474,7 +1474,7 @@ class TCPRelayHandler(object):
                 except Exception as e:
                     logging.error(
                         "decrypt data failed, exception from %s:%d" %
-                        (self._client_address[0], self._client_address[1]))
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
                     return
                 try:
@@ -1485,7 +1485,7 @@ class TCPRelayHandler(object):
                     shell.print_exception(e)
                     logging.error(
                         "exception from %s:%d" %
-                        (self._client_address[0], self._client_address[1]))
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
                     return
             else:
@@ -1506,7 +1506,7 @@ class TCPRelayHandler(object):
                 traceback.print_exc()
             logging.error(
                 "exception from %s:%d" %
-                (self._client_address[0],
+                (self._real_addr,
                  self._client_address[1]))
             self.destroy()
 
@@ -1536,7 +1536,7 @@ class TCPRelayHandler(object):
             logging.error(eventloop.get_sock_error(self._local_sock))
             logging.error(
                 "exception from %s:%d" %
-                (self._client_address[0],
+                (self._real_addr,
                  self._client_address[1]))
         self.destroy()
 
@@ -1549,13 +1549,13 @@ class TCPRelayHandler(object):
                     "when connect to %s:%d from %s:%d via port %d" %
                     (self._remote_address[0],
                      self._remote_address[1],
-                     self._client_address[0],
+                     self._real_addr,
                      self._client_address[1],
                      self._server._listen_port))
             else:
                 logging.error(
                     "exception from %s:%d" %
-                    (self._client_address[0],
+                    (self._real_addr,
                      self._client_address[1]))
         self.destroy()
 
@@ -1611,7 +1611,7 @@ class TCPRelayHandler(object):
                 self._on_local_write()
         else:
             logging.warn('unknown socket from %s:%d' %
-                         (self._client_address[0], self._client_address[1]))
+                         (self._real_addr, self._client_address[1]))
             try:
                 self._loop.removefd(fd)
             except Exception as e:
@@ -1699,7 +1699,7 @@ class TCPRelayHandler(object):
         self._server.remove_handler(self)
         if self._add_ref > 0:
             self._server.add_connection(-1)
-            self._server.stat_add(self._client_address[0], -1)
+            self._server.stat_add(self._real_addr, -1)
 
 
 class TCPRelay(object):
