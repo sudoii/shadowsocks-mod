@@ -888,7 +888,7 @@ class TCPRelayHandler(object):
                                  self._client_address[1],
                                  self._server._listen_port))
 
-                ip = self._real_addr or common.getRealIp(self._real_addr)
+                ip = self._real_addr or common.getRealIp(self._client_address[0])
                 if self._config['is_multi_user'] == 0 and ip not in self._server.connected_iplist and \
                         self._real_addr != 0 and self._server.is_cleaning_connected_iplist == False:
                     self._server.connected_iplist.append(ip)
@@ -1015,7 +1015,7 @@ class TCPRelayHandler(object):
 
                 if self._server.multi_user_table[
                     self._current_user_id]['_disconnect_ipset']:
-                    ip = self._real_addr or self._real_addr
+                    ip = self._real_addr or self._client_address[0]
                     if ip in self._server.multi_user_table[
                         self._current_user_id]['_disconnect_ipset']:
                         if self._remote_address:
