@@ -58,8 +58,8 @@ get port offset by node->name
 HK 1 #9900
 then offset is 9900
 """
-GET_PORT_OFFSET_BY_NODE_NAME = True
-GET_PORT_OFFSET_BY_NODE_SERVER = True
+GET_PORT_OFFSET_BY_NODE_NAME = False
+#GET_PORT_OFFSET_BY_NODE_SERVER = True
 
 # DNS nameserver
 NS_NETFLIX = "${NS_NETFLIX}"
