@@ -1626,7 +1626,7 @@ class TCPRelayHandler(object):
 
     def _log_error(self, e):
         logging.error('%s when handling connection from %s:%d' %
-                      (e, self._client_address[0], self._client_address[1]))
+                      (e, self._real_addr, self._client_address[1]))
 
     def stage(self):
         return self._stage
