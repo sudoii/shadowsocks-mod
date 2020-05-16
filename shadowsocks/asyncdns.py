@@ -93,15 +93,15 @@ def get_dns(host):
 
 
 def get_dns_ip():
-    NS_NETFLIX = get_dns(get_config().NS_NETFLIX)
-    NS_HBO = get_dns(get_config().NS_HBO)
-    NS_HULU = get_dns(get_config().NS_HULU)
-    NS_BBC = get_dns(get_config().NS_BBC)
-    # InfoLog('' + '\t' + 'NS_NETFLIX' + '[' + NS_NETFLIX + ']')
-    # InfoLog('' + '\t' + 'NS_HBO' + '[' + NS_HBO + ']')
-    # InfoLog('' + '\t' + 'NS_HULU' + '[' + NS_HULU + ']')
-    # InfoLog('' + '\t' + 'NS_BBC' + '[' + NS_BBC + ']')
-    return NS_NETFLIX, NS_HBO, NS_HULU, NS_BBC
+    ns_netflix = get_dns(get_config().NS_NETFLIX)
+    ns_hbo = get_dns(get_config().NS_HBO)
+    ns_hulu = get_dns(get_config().NS_HULU)
+    ns_bbc = get_dns(get_config().NS_BBC)
+    # InfoLog('' + '\t' + 'ns_netflix' + '[' + ns_netflix + ']')
+    # InfoLog('' + '\t' + 'ns_hbo' + '[' + ns_hbo + ']')
+    # InfoLog('' + '\t' + 'ns_hulu' + '[' + ns_hulu + ']')
+    # InfoLog('' + '\t' + 'ns_bbc' + '[' + ns_bbc + ']')
+    return ns_netflix, ns_hbo, ns_hulu, ns_bbc
 
 
 def detect_ipv6_supprot():
@@ -452,8 +452,8 @@ class DNSResolver(object):
             self._loop.add(self._sock, eventloop.POLL_IN, self)
         else:
             data, addr = sock.recvfrom(1024)
-            NS_NETFLIX, NS_HBO, NS_HULU, NS_BBC = get_dns_ip()
-            unlock_dns = [NS_NETFLIX, NS_HBO, NS_HULU, NS_BBC]
+            ns_netflix, ns_hbo, ns_hulu, ns_bbc = get_dns_ip()
+            unlock_dns = [ns_netflix, ns_hbo, ns_hulu, ns_bbc]
             if addr not in self._servers and addr[0] not in unlock_dns:
                 logging.warn('received a packet other than our dns')
                 return
@@ -480,20 +480,20 @@ class DNSResolver(object):
             logging.debug('resolving %s with type %d using server %s',
                           hostname, qtype, server)
             use_default_dns = True
-            NS_NETFLIX, NS_HBO, NS_HULU, NS_BBC = get_dns_ip()
-            if NS_NETFLIX != 'null' and ("netflix" in str(hostname) or "nflx" in str(hostname)):
-                self._sock.sendto(req, (NS_NETFLIX, 53))
+            ns_netflix, ns_hbo, ns_hulu, ns_bbc = get_dns_ip()
+            if ns_netflix != 'null' and ("netflix" in str(hostname) or "nflx" in str(hostname)):
+                self._sock.sendto(req, (ns_netflix, 53))
                 use_default_dns = False
-            if NS_HBO != 'null' and (
+            if ns_hbo != 'null' and (
                     "hbo" in str(hostname) or "execute-api.ap-southeast-1.amazonaws.com" == str(hostname)):
-                self._sock.sendto(req, (NS_HBO, 53))
+                self._sock.sendto(req, (ns_hbo, 53))
                 use_default_dns = False
-            if NS_HULU != 'null' and ("hulu" in str(hostname) or "happyon.jp" == str(hostname)):
-                self._sock.sendto(req, (NS_HULU, 53))
+            if ns_hulu != 'null' and ("hulu" in str(hostname) or "happyon.jp" == str(hostname)):
+                self._sock.sendto(req, (ns_hulu, 53))
                 use_default_dns = False
-            if NS_BBC != 'null' and (
+            if ns_bbc != 'null' and (
                     "bbc" in str(hostname) or "co.uk" in str(hostname) or "uk-live" in str(hostname)):
-                self._sock.sendto(req, (NS_BBC, 53))
+                self._sock.sendto(req, (ns_bbc, 53))
                 use_default_dns = False
             if use_default_dns:
                 self._sock.sendto(req, server)
