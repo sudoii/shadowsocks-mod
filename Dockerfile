@@ -40,7 +40,7 @@ RUN  apk --no-cache add \
                         pcre-dev \
                         libev-dev \
                         libtool \
-                        libffi-dev                              && \
+                        libffi-dev            && \
      apk --no-cache add --virtual .build-deps \
                         tar \
                         make \
@@ -49,14 +49,13 @@ RUN  apk --no-cache add \
                         autoconf \
                         automake \
                         build-base \
-                        linux-headers                           && \
-     iptables -I INPUT -p tcp --tcp-flags RST RST -j DROP       && \
-     ln -s /usr/bin/python3 /usr/bin/python                     && \
-     ln -s /usr/bin/pip3    /usr/bin/pip                        && \
-     cp  /usr/bin/envsubst  /usr/local/bin/                     && \
-     pip install --upgrade pip                                  && \
-     pip install -r requirements.txt                            && \
-     rm -rf ~/.cache && touch /etc/hosts.deny                   && \
+                        linux-headers         && \
+     ln -s /usr/bin/python3 /usr/bin/python   && \
+     ln -s /usr/bin/pip3    /usr/bin/pip      && \
+     cp  /usr/bin/envsubst  /usr/local/bin/   && \
+     pip install --upgrade pip                && \
+     pip install -r requirements.txt          && \
+     rm -rf ~/.cache && touch /etc/hosts.deny && \
      apk del --purge .build-deps
 
 CMD envsubst < apiconfig.py > userapiconfig.py && \
