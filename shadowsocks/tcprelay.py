@@ -385,7 +385,8 @@ class TCPRelayHandler(object):
                 else:
                     shell.print_exception(e)
                     logging.error(
-                        "exception from RelayIP {}:{} SourceIP{}".format(self._client_address[0], self._client_address[1], self._real_addr))
+                        "exception from %s:%d" %
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
                     return False
             return True
@@ -413,7 +414,8 @@ class TCPRelayHandler(object):
                     # traceback.print_exc()
                     shell.print_exception(e)
                     logging.error(
-                        "exception from RelayIP {}:{} SourceIP{}".format(self._client_address[0], self._client_address[1], self._real_addr))
+                        "exception from %s:%d" %
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
                     return False
             except Exception as e:
@@ -710,7 +712,8 @@ class TCPRelayHandler(object):
                     if self._config['verbose']:
                         traceback.print_exc()
                     logging.error(
-                        "exception from RelayIP {}:{} SourceIP{}".format(self._client_address[0], self._client_address[1], self._real_addr))
+                        "exception from %s:%d" %
+                        (self._real_addr, self._client_address[1]))
                     self.destroy()
 
     def _get_head_size(self, buf, def_value):
@@ -1155,7 +1158,8 @@ class TCPRelayHandler(object):
                     if self._config['verbose']:
                         traceback.print_exc()
                     logging.error(
-                        "exception from RelayIP {}:{} SourceIP{}".format(self._client_address[0], self._client_address[1], self._real_addr))
+                        "exception from %s:%d" %
+                        (self._real_addr, self._client_address[1]))
         self.destroy()
 
     def is_match_relay_rule_mu(self):
@@ -1457,8 +1461,10 @@ class TCPRelayHandler(object):
                         "exception from %s:%d" %
                         (self._real_addr, self._client_address[1]))
                     self.destroy()
-         logging.error(
-                        "exception from RelayIP {}:{} SourceIP{}".format(self._client_address[0], self._client_address[1], self._real_addr))    self._write_to_sock(send_back, self._remote_sock)
+                    return
+                if obfs_decode[1]:
+                    send_back = self._obfs.client_encode(b'')
+                    self._write_to_sock(send_back, self._remote_sock)
                 if not self._protocol.obfs.server_info.recv_iv:
                     iv_len = len(self._protocol.obfs.server_info.iv)
                     self._protocol.obfs.server_info.recv_iv = obfs_decode[
@@ -1481,8 +1487,10 @@ class TCPRelayHandler(object):
                         "exception from %s:%d" %
                         (self._real_addr, self._client_address[1]))
                     self.destroy()
-         logging.error(
-                        "exception from RelayIP {}:{} SourceIP{}".format(self._client_address[0], self._client_address[1], self._real_addr))encrypt(data)
+                    return
+            else:
+                if self._encrypt_correct:
+                    data = self._protocol.server_pre_encrypt(data)
                     data = self._encryptor.encrypt(data)
                     data = self._obfs.server_encode(data)
             if self._encrypt_correct or self._is_relay:
