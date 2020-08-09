@@ -30,6 +30,7 @@ COPY . /root/shadowsocks
 WORKDIR /root/shadowsocks
 
 RUN  apk --no-cache add \
+                        vnstat \
                         curl \
                         libintl \
                         python3-dev \
@@ -50,6 +51,8 @@ RUN  apk --no-cache add \
                         automake \
                         build-base \
                         linux-headers         && \
+     sed -i '/UseLogging/s/2/0/' /etc/vnstat.conf && \
+     sed -i '/RateUnit/s/1/0/' /etc/vnstat.conf && \
      ln -s /usr/bin/python3 /usr/bin/python   && \
      ln -s /usr/bin/pip3    /usr/bin/pip      && \
      cp  /usr/bin/envsubst  /usr/local/bin/   && \
@@ -58,7 +61,8 @@ RUN  apk --no-cache add \
      rm -rf ~/.cache && touch /etc/hosts.deny && \
      apk del --purge .build-deps
 
-CMD envsubst < apiconfig.py > userapiconfig.py && \
+CMD vnstatd -n && \
+    envsubst < apiconfig.py > userapiconfig.py && \
     envsubst < config.json > user-config.json  && \
     echo -e "${NS_SYS_1}\n${NS_SYS_2}\n" > dns.conf  && \
     python server.py
