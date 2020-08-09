@@ -61,7 +61,7 @@ RUN  apk --no-cache add \
      rm -rf ~/.cache && touch /etc/hosts.deny && \
      apk del --purge .build-deps
 
-CMD nohup vnstatd -n >/dev/null 2>&1 & \
+CMD vnstatd -d && \
     envsubst < apiconfig.py > userapiconfig.py && \
     envsubst < config.json > user-config.json  && \
     echo -e "${NS_SYS_1}\n${NS_SYS_2}\n" > dns.conf  && \
