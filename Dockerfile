@@ -1,4 +1,4 @@
-FROM alpine:3.11
+FROM alpine:3.11.6
 MAINTAINER sudoii<sudoii@sudoii.com>
 
 ENV NODE_ID=0                     \
